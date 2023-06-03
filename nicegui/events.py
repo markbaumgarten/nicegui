@@ -75,7 +75,7 @@ class UploadEventArguments(EventArguments):
 
 @dataclass(**KWONLY_SLOTS)
 class UploadedEventArguments(EventArguments):
-    filenames: [str] = []
+    filenames: list = field(default_factory=list)
 
 
 @dataclass(**KWONLY_SLOTS)
