@@ -4,7 +4,7 @@ from fastapi import Request
 from starlette.datastructures import UploadFile
 
 from ..dependencies import register_component
-from ..events import EventArguments, UploadEventArguments, handle_event
+from ..events import EventArguments, UploadEventArguments, UploadedEventArguments, handle_event
 from ..nicegui import app
 from .mixins.disableable_element import DisableableElement
 
@@ -19,6 +19,7 @@ class Upload(DisableableElement):
                  max_total_size: Optional[int] = None,
                  max_files: Optional[int] = None,
                  on_upload: Optional[Callable[..., Any]] = None,
+                 on_uploaded: Optional[Callable[..., Any]] = None,
                  on_rejected: Optional[Callable[..., Any]] = None,
                  label: str = '',
                  auto_upload: bool = False,
@@ -32,6 +33,7 @@ class Upload(DisableableElement):
         :param max_total_size: maximum total size of all files in bytes (default: `0`)
         :param max_files: maximum number of files (default: `0`)
         :param on_upload: callback to execute for each uploaded file (type: nicegui.events.UploadEventArguments)
+        :param on_uploaded: callback to execute when all uploads are done (type: nicegui.events.UploadedEventArguments)
         :param on_rejected: callback to execute for each rejected file
         :param label: label for the uploader (default: `''`)
         :param auto_upload: automatically upload files when they are selected (default: `False`)
@@ -53,6 +55,7 @@ class Upload(DisableableElement):
 
         @app.post(self._props['url'])
         async def upload_route(request: Request) -> Dict[str, str]:
+            filenames = []
             for data in (await request.form()).values():
                 assert isinstance(data, UploadFile)
                 args = UploadEventArguments(
@@ -63,6 +66,14 @@ class Upload(DisableableElement):
                     type=data.content_type or '',
                 )
                 handle_event(on_upload, args)
+                filenames.append(data.filename or '')
+
+            args = UploadedEventArguments(
+                sender=self,
+                client=self.client,
+                filenames=filenames,
+            )
+            handle_event(on_uploaded, args)
             return {'upload': 'success'}
 
         if on_rejected:

@@ -74,6 +74,11 @@ class UploadEventArguments(EventArguments):
 
 
 @dataclass(**KWONLY_SLOTS)
+class UploadedEventArguments(EventArguments):
+    filenames: [str] = []
+
+
+@dataclass(**KWONLY_SLOTS)
 class ValueChangeEventArguments(EventArguments):
     value: Any
 
