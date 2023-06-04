@@ -71,7 +71,7 @@ class Upload(DisableableElement):
             args = UploadedEventArguments(
                 sender=self,
                 client=self.client,
-                filenames=filenames,
+                filenames=','.join(filenames),
             )
             handle_event(on_uploaded, args)
             return {'upload': 'success'}
