@@ -16,6 +16,7 @@ class Upload(DisableableElement, component='upload.js'):
                  max_total_size: Optional[int] = None,
                  max_files: Optional[int] = None,
                  on_upload: Optional[Callable[..., Any]] = None,
+                 on_alluploadsdone: Optional[Callable[..., Any]] = None,
                  on_rejected: Optional[Callable[..., Any]] = None,
                  label: str = '',
                  auto_upload: bool = False,
@@ -50,6 +51,8 @@ class Upload(DisableableElement, component='upload.js'):
 
         @app.post(self._props['url'])
         async def upload_route(request: Request) -> Dict[str, str]:
+            tasks = []
+            allargs = []
             for data in (await request.form()).values():
                 assert isinstance(data, UploadFile)
                 args = UploadEventArguments(
@@ -59,7 +62,12 @@ class Upload(DisableableElement, component='upload.js'):
                     name=data.filename or '',
                     type=data.content_type or '',
                 )
-                handle_event(on_upload, args)
+                tasks.append(handle_event(on_upload, args))
+                allargs.append(args)
+            await asyncio.gather(*tasks)
+            if on_alluploadsdone:
+                handle_event(on_alluploadsdone, allargs)
+
             return {'upload': 'success'}
 
         if on_rejected:
